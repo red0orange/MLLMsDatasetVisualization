@@ -39,11 +39,24 @@ async def load_local_file(file_path: str):
         # 为每个数据项的图像路径添加前缀，使其指向我们的API
         for item in data:
             if "image" in item:
-                # 获取相对路径
-                rel_path = item["image"]
-                if not (rel_path.startswith('/') or rel_path.startswith(('C:', 'D:', 'E:'))):
-                    # 将路径转换为API路径
-                    item["image"] = f"/api/image?path={rel_path}"
+                # 判断图像是单个字符串还是列表
+                if isinstance(item["image"], list):
+                    # 处理列表情况
+                    processed_images = []
+                    for img_path in item["image"]:
+                        # 获取相对路径
+                        if not (img_path.startswith('/') or img_path.startswith(('C:', 'D:', 'E:'))):
+                            # 将路径转换为API路径
+                            processed_images.append(f"/api/image?path={img_path}")
+                        else:
+                            processed_images.append(img_path)
+                    item["image"] = processed_images
+                else:
+                    # 处理单图像情况
+                    rel_path = item["image"]
+                    if not (rel_path.startswith('/') or rel_path.startswith(('C:', 'D:', 'E:'))):
+                        # 将路径转换为API路径
+                        item["image"] = f"/api/image?path={rel_path}"
         
         # 提取所有可能的分类
         subjects = list(set(item.get("subject", "") for item in data if "subject" in item))
