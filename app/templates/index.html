@@ -59,6 +59,38 @@
                     </div>
                 </div>
 
+                <!-- 收藏夹管理 -->
+                <div class="card mt-3">
+                    <div class="card-header bg-warning text-white">
+                        <h4>收藏夹</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="currentFavorite" class="form-label">当前收藏夹</label>
+                            <select class="form-select" id="currentFavorite">
+                                <option value="" disabled selected>请选择收藏夹</option>
+                            </select>
+                        </div>
+                        <div class="d-flex mb-3">
+                            <button type="button" class="btn btn-sm btn-primary me-2" data-bs-toggle="modal" data-bs-target="#newFavoriteModal">
+                                <i class="bi bi-plus-circle"></i> 新建
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger me-2" id="deleteFavoriteBtn" disabled>
+                                <i class="bi bi-trash"></i> 删除
+                            </button>
+                            <button type="button" class="btn btn-sm btn-success" id="exportFavoriteBtn" disabled>
+                                <i class="bi bi-download"></i> 导出
+                            </button>
+                        </div>
+                        <div class="mt-2">
+                            <p class="mb-1">收藏数量: <span id="favoriteCount">0</span></p>
+                            <button type="button" class="btn btn-sm btn-outline-primary w-100 mt-2" id="viewFavoritesBtn" disabled>
+                                查看收藏内容
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card mt-3">
                     <div class="card-header bg-info text-white">
                         <h4>数据统计</h4>
@@ -73,17 +105,25 @@
             <!-- 右侧数据展示区域 -->
             <div class="col-md-9">
                 <div class="alert alert-info" id="uploadInfo">
-                    请输入服务器上JSON文件的路径并点击加载按钮以开始数据可视化。
+                    请选择并上传JSON文件以开始数据可视化。
                 </div>
 
                 <div id="dataContainer" class="row"></div>
 
-                <!-- 添加加载状态提示 -->
-                <div id="scrollLoader" class="text-center py-3" style="display: none;">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">加载更多...</span>
-                    </div>
-                </div>
+                <!-- 分页控制 -->
+                <nav aria-label="Page navigation" class="my-4" id="pagination" style="display: none;">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" id="prevPage">上一页</a>
+                        </li>
+                        <li class="page-item">
+                            <span class="page-link" id="pageInfo">第 1 页</span>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="#" id="nextPage">下一页</a>
+                        </li>
+                    </ul>
+                </nav>
             </div>
         </div>
     </div>
@@ -94,6 +134,32 @@
             <span class="visually-hidden">加载中...</span>
         </div>
         <p class="text-light mt-2">数据加载中，请稍候...</p>
+    </div>
+
+    <!-- 新建收藏夹对话框 -->
+    <div class="modal fade" id="newFavoriteModal" tabindex="-1" aria-labelledby="newFavoriteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newFavoriteModalLabel">新建收藏夹</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="favoriteName" class="form-label">收藏夹名称</label>
+                        <input type="text" class="form-control" id="favoriteName" placeholder="请输入收藏夹名称">
+                    </div>
+                    <div class="mb-3">
+                        <label for="favoriteDesc" class="form-label">描述 (可选)</label>
+                        <textarea class="form-control" id="favoriteDesc" rows="3" placeholder="收藏夹描述"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="createFavoriteBtn">创建</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

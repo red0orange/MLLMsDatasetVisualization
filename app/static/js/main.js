@@ -4,7 +4,12 @@ let filteredData = [];
 let metaData = {};
 let currentPage = 1;
 const itemsPerPage = 8;
-let isLoading = false; // 添加加载状态标志
+let isLoading = false; // 加载状态标志
+
+// 收藏夹相关
+let favorites = {}; // 存储所有收藏夹
+let currentFavoriteId = null; // 当前选中的收藏夹ID
+let isViewingFavorites = false; // 是否正在查看收藏内容
 
 // DOM元素加载完成后执行
 document.addEventListener('DOMContentLoaded', function() {
@@ -16,12 +21,304 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 添加滚动事件监听
     window.addEventListener('scroll', handleScroll);
+    
+    // 收藏夹相关事件
+    document.getElementById('createFavoriteBtn').addEventListener('click', createFavorite);
+    document.getElementById('currentFavorite').addEventListener('change', switchFavorite);
+    document.getElementById('deleteFavoriteBtn').addEventListener('click', deleteFavorite);
+    document.getElementById('exportFavoriteBtn').addEventListener('click', exportFavorite);
+    document.getElementById('viewFavoritesBtn').addEventListener('click', toggleFavoritesView);
+    
+    // 加载本地存储的收藏夹
+    loadFavoritesFromStorage();
 });
+
+// 加载本地存储的收藏夹
+function loadFavoritesFromStorage() {
+    const storedFavorites = localStorage.getItem('vqa_favorites');
+    
+    if (storedFavorites) {
+        try {
+            favorites = JSON.parse(storedFavorites);
+            updateFavoritesDropdown();
+        } catch (e) {
+            console.error('加载收藏夹出错:', e);
+            favorites = {};
+        }
+    }
+}
+
+// 更新收藏夹下拉菜单
+function updateFavoritesDropdown() {
+    const dropdown = document.getElementById('currentFavorite');
+    
+    // 保存当前选中项
+    const currentSelected = dropdown.value;
+    
+    // 清空下拉菜单
+    dropdown.innerHTML = '<option value="" disabled selected>请选择收藏夹</option>';
+    
+    // 添加收藏夹选项
+    for (const id in favorites) {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = favorites[id].name;
+        dropdown.appendChild(option);
+    }
+    
+    // 恢复选中状态
+    if (currentSelected && dropdown.querySelector(`option[value="${currentSelected}"]`)) {
+        dropdown.value = currentSelected;
+    } else if (Object.keys(favorites).length > 0) {
+        // 如果没有之前选择的项，但有收藏夹，选择第一个
+        dropdown.value = Object.keys(favorites)[0];
+    }
+    
+    // 更新按钮状态
+    updateFavoriteButtons();
+}
+
+// 更新收藏夹相关按钮状态
+function updateFavoriteButtons() {
+    const hasSelection = document.getElementById('currentFavorite').value !== "";
+    document.getElementById('deleteFavoriteBtn').disabled = !hasSelection;
+    document.getElementById('exportFavoriteBtn').disabled = !hasSelection;
+    
+    if (hasSelection) {
+        currentFavoriteId = document.getElementById('currentFavorite').value;
+        const count = Object.keys(favorites[currentFavoriteId].items || {}).length;
+        document.getElementById('favoriteCount').textContent = count;
+        document.getElementById('viewFavoritesBtn').disabled = count === 0;
+    } else {
+        currentFavoriteId = null;
+        document.getElementById('favoriteCount').textContent = "0";
+        document.getElementById('viewFavoritesBtn').disabled = true;
+    }
+}
+
+// 创建新收藏夹
+function createFavorite() {
+    const name = document.getElementById('favoriteName').value.trim();
+    const description = document.getElementById('favoriteDesc').value.trim();
+    
+    if (!name) {
+        showAlert('请输入收藏夹名称', 'warning');
+        return;
+    }
+    
+    // 生成唯一ID
+    const id = 'fav_' + Date.now();
+    
+    // 创建新收藏夹
+    favorites[id] = {
+        id: id,
+        name: name,
+        description: description,
+        createdAt: new Date().toISOString(),
+        items: {}
+    };
+    
+    // 保存到本地存储
+    saveFavoritesToStorage();
+    
+    // 更新下拉菜单
+    updateFavoritesDropdown();
+    
+    // 选择新创建的收藏夹
+    document.getElementById('currentFavorite').value = id;
+    currentFavoriteId = id;
+    
+    // 更新按钮状态
+    updateFavoriteButtons();
+    
+    // 关闭模态框
+    const modal = bootstrap.Modal.getInstance(document.getElementById('newFavoriteModal'));
+    modal.hide();
+    
+    // 清空输入框
+    document.getElementById('favoriteName').value = '';
+    document.getElementById('favoriteDesc').value = '';
+    
+    showAlert('收藏夹创建成功', 'success');
+}
+
+// 切换收藏夹
+function switchFavorite() {
+    currentFavoriteId = document.getElementById('currentFavorite').value;
+    updateFavoriteButtons();
+    
+    // 如果当前正在查看收藏内容，则刷新显示
+    if (isViewingFavorites) {
+        showFavoriteItems();
+    }
+}
+
+// 删除收藏夹
+function deleteFavorite() {
+    if (!currentFavoriteId) return;
+    
+    if (confirm(`确定要删除收藏夹 "${favorites[currentFavoriteId].name}" 吗？此操作不可撤销。`)) {
+        delete favorites[currentFavoriteId];
+        saveFavoritesToStorage();
+        
+        // 更新UI
+        updateFavoritesDropdown();
+        
+        // 如果正在查看收藏内容，则切回正常视图
+        if (isViewingFavorites) {
+            isViewingFavorites = false;
+            renderData();
+        }
+        
+        showAlert('收藏夹已删除', 'info');
+    }
+}
+
+// 导出收藏夹
+function exportFavorite() {
+    if (!currentFavoriteId) return;
+    
+    const favorite = favorites[currentFavoriteId];
+    
+    // 获取收藏夹中的所有项
+    const items = Object.values(favorite.items);
+    
+    if (items.length === 0) {
+        showAlert('收藏夹为空，无法导出', 'warning');
+        return;
+    }
+    
+    // 创建JSON文件
+    const json = JSON.stringify(items, null, 2);
+    const blob = new Blob([json], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    
+    // 创建下载链接
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${favorite.name}_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    
+    // 清理
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 0);
+    
+    showAlert('收藏夹已导出', 'success');
+}
+
+// 切换收藏内容视图
+function toggleFavoritesView() {
+    isViewingFavorites = !isViewingFavorites;
+    
+    if (isViewingFavorites) {
+        // 切换到收藏视图
+        document.getElementById('viewFavoritesBtn').textContent = '返回全部数据';
+        document.getElementById('viewFavoritesBtn').classList.replace('btn-outline-primary', 'btn-outline-secondary');
+        showFavoriteItems();
+    } else {
+        // 切换到全部数据视图
+        document.getElementById('viewFavoritesBtn').textContent = '查看收藏内容';
+        document.getElementById('viewFavoritesBtn').classList.replace('btn-outline-secondary', 'btn-outline-primary');
+        currentPage = 1;
+        renderData();
+    }
+}
+
+// 显示收藏夹中的内容
+function showFavoriteItems() {
+    if (!currentFavoriteId) return;
+    
+    const container = document.getElementById('dataContainer');
+    container.innerHTML = '';
+    
+    const favoriteItems = Object.values(favorites[currentFavoriteId].items);
+    
+    if (favoriteItems.length === 0) {
+        container.innerHTML = '<div class="col-12"><div class="alert alert-warning">收藏夹为空</div></div>';
+        return;
+    }
+    
+    // 渲染收藏项
+    renderDataItems(favoriteItems, container);
+}
+
+// 将数据项添加到收藏夹
+function addToFavorite(item) {
+    if (!currentFavoriteId) {
+        showAlert('请先选择或创建收藏夹', 'warning');
+        return;
+    }
+    
+    // 复制一个干净的数据项对象
+    const itemToSave = { ...item };
+    
+    // 使用pid作为唯一标识符
+    const itemId = itemToSave.pid.toString();
+    
+    // 检查是否已收藏
+    if (favorites[currentFavoriteId].items[itemId]) {
+        showAlert('该项已在收藏夹中', 'info');
+        return;
+    }
+    
+    // 添加到收藏夹
+    favorites[currentFavoriteId].items[itemId] = itemToSave;
+    
+    // 保存到本地存储
+    saveFavoritesToStorage();
+    
+    // 更新计数
+    const count = Object.keys(favorites[currentFavoriteId].items).length;
+    document.getElementById('favoriteCount').textContent = count;
+    document.getElementById('viewFavoritesBtn').disabled = count === 0;
+    
+    showAlert('已添加到收藏夹', 'success');
+}
+
+// 从收藏夹中移除
+function removeFromFavorite(item) {
+    if (!currentFavoriteId) return;
+    
+    const itemId = item.pid.toString();
+    
+    if (favorites[currentFavoriteId].items[itemId]) {
+        delete favorites[currentFavoriteId].items[itemId];
+        
+        // 保存到本地存储
+        saveFavoritesToStorage();
+        
+        // 更新计数
+        const count = Object.keys(favorites[currentFavoriteId].items).length;
+        document.getElementById('favoriteCount').textContent = count;
+        document.getElementById('viewFavoritesBtn').disabled = count === 0;
+        
+        // 如果在收藏视图，则刷新显示
+        if (isViewingFavorites) {
+            showFavoriteItems();
+        }
+        
+        showAlert('已从收藏夹中移除', 'info');
+    }
+}
+
+// 检查项目是否已收藏
+function isItemFavorited(itemId) {
+    if (!currentFavoriteId) return false;
+    return !!favorites[currentFavoriteId].items[itemId];
+}
+
+// 保存收藏夹到本地存储
+function saveFavoritesToStorage() {
+    localStorage.setItem('vqa_favorites', JSON.stringify(favorites));
+}
 
 // 处理滚动事件
 function handleScroll() {
-    // 如果正在加载或者没有更多数据，则返回
-    if (isLoading || currentPage * itemsPerPage >= filteredData.length) {
+    // 如果正在加载、没有更多数据，或者正在查看收藏内容，则返回
+    if (isLoading || currentPage * itemsPerPage >= filteredData.length || isViewingFavorites) {
         return;
     }
 
@@ -234,6 +531,42 @@ function renderDataItems(dataItems, container) {
             <span>${item.subject} / ${item.category}</span>
         `;
         
+        // 收藏按钮
+        const favoriteBtn = document.createElement('button');
+        favoriteBtn.className = 'btn btn-sm favorite-btn';
+        
+        // 根据是否已收藏设置按钮样式
+        const isFavorited = isItemFavorited(item.pid.toString());
+        if (isFavorited) {
+            favoriteBtn.innerHTML = '<i class="bi bi-star-fill"></i>';
+            favoriteBtn.title = '从收藏夹移除';
+            favoriteBtn.classList.add('favorited');
+        } else {
+            favoriteBtn.innerHTML = '<i class="bi bi-star"></i>';
+            favoriteBtn.title = '添加到收藏夹';
+        }
+        
+        // 绑定收藏/取消收藏事件
+        favoriteBtn.onclick = function() {
+            if (isItemFavorited(item.pid.toString())) {
+                removeFromFavorite(item);
+                // 只有在非收藏视图中才更新按钮
+                if (!isViewingFavorites) {
+                    favoriteBtn.innerHTML = '<i class="bi bi-star"></i>';
+                    favoriteBtn.title = '添加到收藏夹';
+                    favoriteBtn.classList.remove('favorited');
+                }
+            } else {
+                addToFavorite(item);
+                favoriteBtn.innerHTML = '<i class="bi bi-star-fill"></i>';
+                favoriteBtn.title = '从收藏夹移除';
+                favoriteBtn.classList.add('favorited');
+            }
+        };
+        
+        // 将收藏按钮添加到卡片头部
+        cardHeader.appendChild(favoriteBtn);
+        
         // 卡片内容
         const cardBody = document.createElement('div');
         cardBody.className = 'card-body';
@@ -303,7 +636,7 @@ function renderDataItems(dataItems, container) {
     });
     
     // 如果已经加载完所有数据，显示一个提示
-    if (currentPage * itemsPerPage >= filteredData.length && filteredData.length > itemsPerPage) {
+    if (!isViewingFavorites && currentPage * itemsPerPage >= filteredData.length && filteredData.length > itemsPerPage) {
         const endMessage = document.createElement('div');
         endMessage.className = 'col-12 end-message fade-in';
         endMessage.innerHTML = '<p>— 已加载全部数据 —</p>';

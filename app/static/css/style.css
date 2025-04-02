@@ -32,6 +32,7 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: relative;
 }
 
 .vqa-card .card-body {
@@ -165,4 +166,40 @@ header {
     .filter-panel {
         margin-bottom: 20px;
     }
+}
+
+/* 收藏按钮样式 */
+.favorite-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #777;
+    border: none;
+    padding: 0;
+    transition: all 0.2s ease;
+}
+
+.favorite-btn:hover {
+    transform: scale(1.1);
+    background-color: white;
+}
+
+.favorite-btn i {
+    font-size: 16px;
+}
+
+.favorite-btn.favorited {
+    color: gold;
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+.favorite-btn.favorited:hover {
+    color: #dc3545;
 } 
