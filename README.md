@@ -45,12 +45,12 @@
 
 ### 安装依赖
 ```bash
-pip install -r requirements.txt
+pip install "fastapi[standard]"
 ```
 
 ### 启动应用
 ```bash
-python -m uvicorn app.main:app --host 0.0.0.0 --port 18000 --reload
+fastapi dev app/main.py --port 18000
 ```
 
 应用将在 http://localhost:18000 运行。
