@@ -41,7 +41,6 @@
 ### 环境要求
 - Python 3.7+
 - FastAPI
-- Uvicorn
 
 ### 安装依赖
 ```bash
