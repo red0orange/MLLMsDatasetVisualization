@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VQA 数据可视化</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+</head>
+<body>
+    <div class="container-fluid">
+        <header class="p-3 mb-4 bg-dark text-white">
+            <h1 class="text-center">Visual Question Answer 数据可视化</h1>
+        </header>
+
+        <div class="row">
+            <!-- 左侧过滤区域 -->
+            <div class="col-md-3 filter-panel" id="filterPanel">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4>数据上传</h4>
+                    </div>
+                    <div class="card-body">
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="fileUpload" class="form-label">选择JSON文件</label>
+                                <input type="file" class="form-control" id="fileUpload" accept=".json">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">上传并加载</button>
+                        </form>
+                        
+                        <hr class="my-3">
+                        
+                        <div>
+                            <h5>从服务器本地文件加载</h5>
+                            <div class="mb-3">
+                                <label for="localFilePath" class="form-label">本地文件路径</label>
+                                <input type="text" class="form-control" id="localFilePath" placeholder="/path/to/your/data.json">
+                            </div>
+                            <button type="button" class="btn btn-success w-100" id="loadLocalFile">加载本地文件</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3" id="filterCard" style="display: none;">
+                    <div class="card-header bg-secondary text-white">
+                        <h4>数据筛选</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="subjectFilter" class="form-label">Subject</label>
+                            <select class="form-select" id="subjectFilter">
+                                <option value="all">全部</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="categoryFilter" class="form-label">Category</label>
+                            <select class="form-select" id="categoryFilter">
+                                <option value="all">全部</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="typeFilter" class="form-label">Type</label>
+                            <select class="form-select" id="typeFilter">
+                                <option value="all">全部</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-success w-100" id="applyFilters">应用筛选</button>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header bg-info text-white">
+                        <h4>数据统计</h4>
+                    </div>
+                    <div class="card-body" id="statsPanel">
+                        <p>总数据条数: <span id="totalCount">0</span></p>
+                        <p>当前显示: <span id="currentCount">0</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧数据展示区域 -->
+            <div class="col-md-9">
+                <div class="alert alert-info" id="uploadInfo">
+                    请选择并上传JSON文件以开始数据可视化。
+                </div>
+
+                <div id="dataContainer" class="row"></div>
+
+                <!-- 分页控制 -->
+                <nav aria-label="Page navigation" class="my-4" id="pagination" style="display: none;">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" id="prevPage">上一页</a>
+                        </li>
+                        <li class="page-item">
+                            <span class="page-link" id="pageInfo">第 1 页</span>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="#" id="nextPage">下一页</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载提示框 -->
+    <div id="loadingOverlay" style="display: none;">
+        <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+        <p class="text-light mt-2">数据加载中，请稍候...</p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', path='/js/main.js') }}"></script>
+</body>
+</html> 
