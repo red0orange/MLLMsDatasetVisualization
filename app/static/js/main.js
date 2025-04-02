@@ -4,6 +4,7 @@ let filteredData = [];
 let metaData = {};
 let currentPage = 1;
 const itemsPerPage = 8;
+let isLoading = false; // 添加加载状态标志
 
 // DOM元素加载完成后执行
 document.addEventListener('DOMContentLoaded', function() {
@@ -13,10 +14,53 @@ document.addEventListener('DOMContentLoaded', function() {
     // 绑定筛选按钮事件
     document.getElementById('applyFilters').addEventListener('click', applyFilters);
 
-    // 绑定分页事件
-    document.getElementById('prevPage').addEventListener('click', goToPrevPage);
-    document.getElementById('nextPage').addEventListener('click', goToNextPage);
+    // 添加滚动事件监听
+    window.addEventListener('scroll', handleScroll);
 });
+
+// 处理滚动事件
+function handleScroll() {
+    // 如果正在加载或者没有更多数据，则返回
+    if (isLoading || currentPage * itemsPerPage >= filteredData.length) {
+        return;
+    }
+
+    // 计算滚动位置
+    const scrollHeight = document.documentElement.scrollHeight;
+    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+    const clientHeight = document.documentElement.clientHeight;
+
+    // 当滚动到底部附近时，加载更多数据
+    if (scrollTop + clientHeight >= scrollHeight - 200) {
+        loadMoreData();
+    }
+}
+
+// 加载更多数据
+function loadMoreData() {
+    isLoading = true;
+    
+    // 显示加载指示器
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.id = 'scrollLoadingIndicator';
+    loadingIndicator.className = 'text-center my-3';
+    loadingIndicator.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">加载中...</span></div>';
+    document.getElementById('dataContainer').appendChild(loadingIndicator);
+    
+    // 模拟网络延迟，实际使用时可以删除
+    setTimeout(() => {
+        currentPage++;
+        renderMoreData();
+        
+        // 移除加载指示器
+        const indicator = document.getElementById('scrollLoadingIndicator');
+        if (indicator) {
+            indicator.remove();
+        }
+        
+        isLoading = false;
+    }, 500);
+}
 
 // 处理从服务器本地文件加载
 async function handleLoadLocalFile() {
@@ -45,6 +89,7 @@ async function handleLoadLocalFile() {
         allData = result.data;
         filteredData = [...allData];
         metaData = result.meta;
+        currentPage = 1; // 重置页码
         
         // 更新UI
         updateFilters();
@@ -140,26 +185,43 @@ function updateStats() {
     document.getElementById('currentCount').textContent = filteredData.length;
 }
 
-// 渲染数据
+// 渲染数据（初始加载）
 function renderData() {
     const container = document.getElementById('dataContainer');
     container.innerHTML = '';
     
-    // 计算当前页的数据
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
-    const currentPageData = filteredData.slice(startIndex, endIndex);
-    
-    if (currentPageData.length === 0) {
+    if (filteredData.length === 0) {
         container.innerHTML = '<div class="col-12"><div class="alert alert-warning">没有符合条件的数据</div></div>';
-        document.getElementById('pagination').style.display = 'none';
         return;
     }
     
+    // 计算当前页的数据
+    const startIndex = 0;
+    const endIndex = Math.min(itemsPerPage, filteredData.length);
+    const initialData = filteredData.slice(startIndex, endIndex);
+    
     // 渲染每条数据
-    currentPageData.forEach(item => {
+    renderDataItems(initialData, container);
+}
+
+// 渲染更多数据（滚动加载）
+function renderMoreData() {
+    const container = document.getElementById('dataContainer');
+    
+    // 计算新一页的数据
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, filteredData.length);
+    const newPageData = filteredData.slice(startIndex, endIndex);
+    
+    // 渲染数据项
+    renderDataItems(newPageData, container);
+}
+
+// 渲染数据项（复用函数）
+function renderDataItems(dataItems, container) {
+    dataItems.forEach(item => {
         const col = document.createElement('div');
-        col.className = 'col-md-6 col-lg-6 mb-4';
+        col.className = 'col-md-6 col-lg-6 mb-4 fade-in';
         
         const card = document.createElement('div');
         card.className = 'vqa-card';
@@ -240,61 +302,12 @@ function renderData() {
         container.appendChild(col);
     });
     
-    // 更新分页
-    updatePagination();
-}
-
-// 更新分页控件
-function updatePagination() {
-    const pagination = document.getElementById('pagination');
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-    
-    // 如果没有数据或者只有一页，隐藏分页
-    if (totalPages <= 1) {
-        pagination.style.display = 'none';
-        return;
-    }
-    
-    pagination.style.display = 'block';
-    
-    // 更新页码信息
-    document.getElementById('pageInfo').textContent = `第 ${currentPage} 页 / 共 ${totalPages} 页`;
-    
-    // 更新上一页按钮状态
-    const prevBtn = document.getElementById('prevPage');
-    if (currentPage === 1) {
-        prevBtn.parentElement.classList.add('disabled');
-    } else {
-        prevBtn.parentElement.classList.remove('disabled');
-    }
-    
-    // 更新下一页按钮状态
-    const nextBtn = document.getElementById('nextPage');
-    if (currentPage === totalPages) {
-        nextBtn.parentElement.classList.add('disabled');
-    } else {
-        nextBtn.parentElement.classList.remove('disabled');
-    }
-}
-
-// 上一页
-function goToPrevPage(e) {
-    e.preventDefault();
-    if (currentPage > 1) {
-        currentPage--;
-        renderData();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-}
-
-// 下一页
-function goToNextPage(e) {
-    e.preventDefault();
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-    if (currentPage < totalPages) {
-        currentPage++;
-        renderData();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    // 如果已经加载完所有数据，显示一个提示
+    if (currentPage * itemsPerPage >= filteredData.length && filteredData.length > itemsPerPage) {
+        const endMessage = document.createElement('div');
+        endMessage.className = 'col-12 end-message fade-in';
+        endMessage.innerHTML = '<p>— 已加载全部数据 —</p>';
+        container.appendChild(endMessage);
     }
 }
 
