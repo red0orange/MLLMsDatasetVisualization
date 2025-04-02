@@ -4,7 +4,6 @@ let filteredData = [];
 let metaData = {};
 let currentPage = 1;
 const itemsPerPage = 8;
-let imageRootDir = ''; // 新增图像根目录变量
 
 // DOM元素加载完成后执行
 document.addEventListener('DOMContentLoaded', function() {
@@ -46,7 +45,6 @@ async function handleLoadLocalFile() {
         allData = result.data;
         filteredData = [...allData];
         metaData = result.meta;
-        imageRootDir = metaData.image_root_dir || ''; // 保存图像根目录
         
         // 更新UI
         updateFilters();
@@ -182,20 +180,17 @@ function renderData() {
         const imageContainer = document.createElement('div');
         imageContainer.className = 'image-container';
         
-        // 处理图片路径，如果是相对路径，则拼接上图像根目录
-        const imagePath = getFullImagePath(item.image);
-        
-        // 加载图片
+        // 加载图片 - 现在图像路径已经在后端处理过
         const img = document.createElement('img');
         img.className = 'vqa-image';
-        img.src = imagePath;
+        img.src = item.image;
         img.alt = `Image ${item.pid}`;
         
         const openFolderBtn = document.createElement('button');
         openFolderBtn.className = 'btn btn-sm btn-light image-open-btn';
         openFolderBtn.innerHTML = '<i class="bi bi-folder2-open"></i>';
         openFolderBtn.title = '打开图片目录';
-        openFolderBtn.onclick = () => openImageFolder(imagePath);
+        openFolderBtn.onclick = () => openImageFolder(item.image);
         
         imageContainer.appendChild(img);
         imageContainer.appendChild(openFolderBtn);
@@ -247,19 +242,6 @@ function renderData() {
     
     // 更新分页
     updatePagination();
-}
-
-// 获取完整图像路径
-function getFullImagePath(imagePath) {
-    if (!imagePath) return '';
-    
-    // 如果是绝对路径，则直接返回
-    if (imagePath.startsWith('/') || imagePath.match(/^[A-Za-z]:\\/)) {
-        return imagePath;
-    }
-    
-    // 否则拼接上图像根目录
-    return `${imageRootDir}/${imagePath}`;
 }
 
 // 更新分页控件
