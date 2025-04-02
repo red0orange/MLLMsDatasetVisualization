@@ -4,13 +4,10 @@ let filteredData = [];
 let metaData = {};
 let currentPage = 1;
 const itemsPerPage = 8;
+let imageRootDir = ''; // 新增图像根目录变量
 
 // DOM元素加载完成后执行
 document.addEventListener('DOMContentLoaded', function() {
-    // 绑定上传表单事件
-    const uploadForm = document.getElementById('uploadForm');
-    uploadForm.addEventListener('submit', handleFileUpload);
-    
     // 绑定加载本地文件按钮事件
     document.getElementById('loadLocalFile').addEventListener('click', handleLoadLocalFile);
 
@@ -21,64 +18,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('prevPage').addEventListener('click', goToPrevPage);
     document.getElementById('nextPage').addEventListener('click', goToNextPage);
 });
-
-// 处理文件上传
-async function handleFileUpload(e) {
-    e.preventDefault();
-    
-    // 获取文件
-    const fileInput = document.getElementById('fileUpload');
-    const file = fileInput.files[0];
-    
-    if (!file) {
-        showAlert('请先选择JSON文件', 'danger');
-        return;
-    }
-    
-    // 显示加载中
-    showLoading(true);
-    
-    // 创建FormData对象
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    try {
-        // 发送请求
-        const response = await fetch('/api/upload', {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (!response.ok) {
-            throw new Error('上传文件失败，服务器响应: ' + response.status);
-        }
-        
-        const result = await response.json();
-        
-        // 保存数据
-        allData = result.data;
-        filteredData = [...allData];
-        metaData = result.meta;
-        
-        // 更新UI
-        updateFilters();
-        updateStats();
-        renderData();
-        
-        // 显示筛选卡片
-        document.getElementById('filterCard').style.display = 'block';
-        
-        // 隐藏提示
-        document.getElementById('uploadInfo').style.display = 'none';
-        
-        showAlert(`成功加载 ${allData.length} 条数据`, 'success');
-    } catch (error) {
-        console.error('上传失败:', error);
-        showAlert('上传文件时出错: ' + error.message, 'danger');
-    } finally {
-        showLoading(false);
-    }
-}
 
 // 处理从服务器本地文件加载
 async function handleLoadLocalFile() {
@@ -107,6 +46,7 @@ async function handleLoadLocalFile() {
         allData = result.data;
         filteredData = [...allData];
         metaData = result.meta;
+        imageRootDir = metaData.image_root_dir || ''; // 保存图像根目录
         
         // 更新UI
         updateFilters();
@@ -242,18 +182,20 @@ function renderData() {
         const imageContainer = document.createElement('div');
         imageContainer.className = 'image-container';
         
-        // @note 加载图片时，需要确保图片路径正确
+        // 处理图片路径，如果是相对路径，则拼接上图像根目录
+        const imagePath = getFullImagePath(item.image);
+        
+        // 加载图片
         const img = document.createElement('img');
         img.className = 'vqa-image';
-        
-        img.src = item.image; // 注意：需要确保图片路径正确
+        img.src = imagePath;
         img.alt = `Image ${item.pid}`;
         
         const openFolderBtn = document.createElement('button');
         openFolderBtn.className = 'btn btn-sm btn-light image-open-btn';
         openFolderBtn.innerHTML = '<i class="bi bi-folder2-open"></i>';
         openFolderBtn.title = '打开图片目录';
-        openFolderBtn.onclick = () => openImageFolder(item.image);
+        openFolderBtn.onclick = () => openImageFolder(imagePath);
         
         imageContainer.appendChild(img);
         imageContainer.appendChild(openFolderBtn);
@@ -305,6 +247,19 @@ function renderData() {
     
     // 更新分页
     updatePagination();
+}
+
+// 获取完整图像路径
+function getFullImagePath(imagePath) {
+    if (!imagePath) return '';
+    
+    // 如果是绝对路径，则直接返回
+    if (imagePath.startsWith('/') || imagePath.match(/^[A-Za-z]:\\/)) {
+        return imagePath;
+    }
+    
+    // 否则拼接上图像根目录
+    return `${imageRootDir}/${imagePath}`;
 }
 
 // 更新分页控件

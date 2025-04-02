@@ -19,21 +19,10 @@
             <div class="col-md-3 filter-panel" id="filterPanel">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
-                        <h4>数据上传</h4>
+                        <h4>数据加载</h4>
                     </div>
                     <div class="card-body">
-                        <form id="uploadForm" enctype="multipart/form-data">
-                            <div class="mb-3">
-                                <label for="fileUpload" class="form-label">选择JSON文件</label>
-                                <input type="file" class="form-control" id="fileUpload" accept=".json">
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100">上传并加载</button>
-                        </form>
-                        
-                        <hr class="my-3">
-                        
                         <div>
-                            <h5>从服务器本地文件加载</h5>
                             <div class="mb-3">
                                 <label for="localFilePath" class="form-label">本地文件路径</label>
                                 <input type="text" class="form-control" id="localFilePath" placeholder="/path/to/your/data.json">
@@ -84,7 +73,7 @@
             <!-- 右侧数据展示区域 -->
             <div class="col-md-9">
                 <div class="alert alert-info" id="uploadInfo">
-                    请选择并上传JSON文件以开始数据可视化。
+                    请输入服务器上JSON文件的路径并点击加载按钮以开始数据可视化。
                 </div>
 
                 <div id="dataContainer" class="row"></div>
