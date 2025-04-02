@@ -571,24 +571,107 @@ function renderDataItems(dataItems, container) {
         const cardBody = document.createElement('div');
         cardBody.className = 'card-body';
         
-        // 图片部分
+        // 图片部分 - 处理图像可能是列表的情况
         const imageContainer = document.createElement('div');
         imageContainer.className = 'image-container';
         
-        // 加载图片 - 现在图像路径已经在后端处理过
-        const img = document.createElement('img');
-        img.className = 'vqa-image';
-        img.src = item.image;
-        img.alt = `Image ${item.pid}`;
+        // 确定图像是列表还是单个字符串
+        const images = Array.isArray(item.image) ? item.image : [item.image];
         
-        const openFolderBtn = document.createElement('button');
-        openFolderBtn.className = 'btn btn-sm btn-light image-open-btn';
-        openFolderBtn.innerHTML = '<i class="bi bi-folder2-open"></i>';
-        openFolderBtn.title = '打开图片目录';
-        openFolderBtn.onclick = () => openImageFolder(item.image);
-        
-        imageContainer.appendChild(img);
-        imageContainer.appendChild(openFolderBtn);
+        // 如果有多个图像，创建图像轮播
+        if (images.length > 1) {
+            // 创建轮播容器
+            const carousel = document.createElement('div');
+            const carouselId = `carousel-${item.pid}`;
+            carousel.id = carouselId;
+            carousel.className = 'carousel slide';
+            carousel.setAttribute('data-bs-ride', 'carousel');
+            
+            // 创建轮播指示器
+            const indicators = document.createElement('div');
+            indicators.className = 'carousel-indicators';
+            
+            // 创建轮播项容器
+            const carouselInner = document.createElement('div');
+            carouselInner.className = 'carousel-inner';
+            
+            // 添加每个图像作为轮播项
+            images.forEach((imgSrc, index) => {
+                // 创建指示器按钮
+                const indicator = document.createElement('button');
+                indicator.setAttribute('type', 'button');
+                indicator.setAttribute('data-bs-target', `#${carouselId}`);
+                indicator.setAttribute('data-bs-slide-to', index);
+                if (index === 0) indicator.classList.add('active');
+                indicators.appendChild(indicator);
+                
+                // 创建轮播项
+                const carouselItem = document.createElement('div');
+                carouselItem.className = `carousel-item ${index === 0 ? 'active' : ''}`;
+                
+                // 创建图像
+                const img = document.createElement('img');
+                img.src = imgSrc;
+                img.className = 'vqa-image d-block w-100';
+                img.alt = `Image ${item.pid}-${index+1}`;
+                
+                carouselItem.appendChild(img);
+                carouselInner.appendChild(carouselItem);
+            });
+            
+            // 创建上一个/下一个控制按钮
+            const prevButton = document.createElement('button');
+            prevButton.className = 'carousel-control-prev';
+            prevButton.setAttribute('type', 'button');
+            prevButton.setAttribute('data-bs-target', `#${carouselId}`);
+            prevButton.setAttribute('data-bs-slide', 'prev');
+            prevButton.innerHTML = `
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">上一个</span>
+            `;
+            
+            const nextButton = document.createElement('button');
+            nextButton.className = 'carousel-control-next';
+            nextButton.setAttribute('type', 'button');
+            nextButton.setAttribute('data-bs-target', `#${carouselId}`);
+            nextButton.setAttribute('data-bs-slide', 'next');
+            nextButton.innerHTML = `
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">下一个</span>
+            `;
+            
+            // 组装轮播
+            carousel.appendChild(indicators);
+            carousel.appendChild(carouselInner);
+            carousel.appendChild(prevButton);
+            carousel.appendChild(nextButton);
+            
+            // 添加到图像容器
+            imageContainer.appendChild(carousel);
+            
+            // 为第一张图像添加打开文件夹按钮
+            const openFolderBtn = document.createElement('button');
+            openFolderBtn.className = 'btn btn-sm btn-light image-open-btn';
+            openFolderBtn.innerHTML = '<i class="bi bi-folder2-open"></i>';
+            openFolderBtn.title = '打开图片目录';
+            openFolderBtn.onclick = () => openImageFolder(images[0]);
+            imageContainer.appendChild(openFolderBtn);
+        } else {
+            // 单图像情况保持不变
+            const img = document.createElement('img');
+            img.className = 'vqa-image';
+            img.src = images[0];
+            img.alt = `Image ${item.pid}`;
+            
+            const openFolderBtn = document.createElement('button');
+            openFolderBtn.className = 'btn btn-sm btn-light image-open-btn';
+            openFolderBtn.innerHTML = '<i class="bi bi-folder2-open"></i>';
+            openFolderBtn.title = '打开图片目录';
+            openFolderBtn.onclick = () => openImageFolder(images[0]);
+            
+            imageContainer.appendChild(img);
+            imageContainer.appendChild(openFolderBtn);
+        }
         
         // 问题部分
         const questionContainer = document.createElement('div');
