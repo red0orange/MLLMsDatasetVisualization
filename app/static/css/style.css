@@ -46,72 +46,100 @@ header {
     background-color: #f8f9fa;
 }
 
-/* 图片样式 */
-.vqa-image {
-    width: 100%;
-    height: 200px;
-    object-fit: contain;
-    border-radius: 5px;
-    margin-bottom: 10px;
-}
-
+/* 图像相关样式 */
 .image-container {
     position: relative;
     margin-bottom: 15px;
+    overflow: hidden;
+    border-radius: 8px;
 }
 
+.vqa-image {
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    object-fit: contain;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    transition: transform 0.3s ease;
+}
+
+/* 图像网格样式 */
+.image-grid {
+    display: grid;
+    grid-gap: 8px;
+    margin-bottom: 10px;
+}
+
+.image-wrapper {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    aspect-ratio: 4/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+}
+
+.grid-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.grid-image:hover {
+    transform: scale(1.05);
+}
+
+/* 图像打开按钮 */
 .image-open-btn {
     position: absolute;
     top: 10px;
     right: 10px;
-    background-color: rgba(255, 255, 255, 0.8);
+    opacity: 0.8;
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
     display: flex;
-    justify-content: center;
     align-items: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
+    justify-content: center;
+    z-index: 10;
 }
 
 .image-open-btn:hover {
-    background-color: rgba(0, 123, 255, 0.8);
-    color: white;
+    opacity: 1;
+    background-color: #fff;
 }
 
-/* 问题文本样式 */
+/* 问题和复制按钮 */
 .question-container {
     position: relative;
-    margin-bottom: 15px;
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.question-container p {
+    margin-right: 50px;
+    margin-bottom: 0;
 }
 
 .copy-btn {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    background-color: rgba(255, 255, 255, 0.8);
-    border-radius: 5px;
-    padding: 5px 10px;
-    font-size: 0.8em;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.copy-btn:hover {
-    background-color: rgba(0, 123, 255, 0.8);
-    color: white;
+    top: 0;
+    right: 0;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
 }
 
 /* 答案样式 */
 .answer {
-    font-weight: bold;
-    color: #dc3545;
-    margin-top: 10px;
-    font-size: 1.2em;
+    padding: 8px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    font-weight: 500;
 }
 
 /* 过滤面板样式 */
@@ -171,32 +199,26 @@ header {
 /* 收藏按钮样式 */
 .favorite-btn {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 8px;
+    right: 8px;
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: #777;
-    border: none;
     padding: 0;
-    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.7);
+    border: none;
+    transition: all 0.2s;
 }
 
 .favorite-btn:hover {
-    transform: scale(1.1);
-    background-color: white;
-}
-
-.favorite-btn i {
-    font-size: 16px;
+    background-color: rgba(255, 255, 255, 0.9);
 }
 
 .favorite-btn.favorited {
-    color: gold;
+    color: #ffc107;
     background-color: rgba(255, 255, 255, 0.9);
 }
 
@@ -258,4 +280,27 @@ header {
 .carousel + .image-open-btn {
     top: 10px;
     right: 10px;
+}
+
+/* 图像模态框样式 */
+#imageModal .modal-body {
+    padding: 0;
+    background-color: #f0f0f0;
+    border-radius: 0 0 5px 5px;
+}
+
+#imageModal .modal-dialog {
+    max-width: 80vw;
+}
+
+#imageModal .img-fluid {
+    max-height: calc(90vh - 60px);
+    object-fit: contain;
+    margin: 0 auto;
+    display: block;
+}
+
+#imageModal .modal-header {
+    padding: 10px 15px;
+    background-color: #f8f9fa;
 } 

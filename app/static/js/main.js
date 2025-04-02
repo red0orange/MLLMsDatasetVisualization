@@ -147,10 +147,44 @@ function switchFavorite() {
     currentFavoriteId = document.getElementById('currentFavorite').value;
     updateFavoriteButtons();
     
+    // 更新所有卡片的收藏状态
+    if (!isViewingFavorites) {
+        updateAllCardsFavoriteStatus();
+    }
+    
     // 如果当前正在查看收藏内容，则刷新显示
     if (isViewingFavorites) {
         showFavoriteItems();
     }
+}
+
+// 更新所有卡片的收藏按钮状态
+function updateAllCardsFavoriteStatus() {
+    // 获取所有收藏按钮
+    const favoriteButtons = document.querySelectorAll('.favorite-btn');
+    
+    favoriteButtons.forEach(btn => {
+        // 从卡片中获取pid
+        const card = btn.closest('.vqa-card');
+        const headerText = card.querySelector('.card-header').textContent;
+        const pidMatch = headerText.match(/ID:\s*(\d+)/);
+        
+        if (pidMatch && pidMatch[1]) {
+            const pid = pidMatch[1];
+            const isFavorited = isItemFavorited(pid);
+            
+            // 更新按钮状态
+            if (isFavorited) {
+                btn.innerHTML = '<i class="bi bi-star-fill"></i>';
+                btn.title = '从收藏夹移除';
+                btn.classList.add('favorited');
+            } else {
+                btn.innerHTML = '<i class="bi bi-star"></i>';
+                btn.title = '添加到收藏夹';
+                btn.classList.remove('favorited');
+            }
+        }
+    });
 }
 
 // 删除收藏夹
@@ -578,76 +612,48 @@ function renderDataItems(dataItems, container) {
         // 确定图像是列表还是单个字符串
         const images = Array.isArray(item.image) ? item.image : [item.image];
         
-        // 如果有多个图像，创建图像轮播
+        // 如果有多个图像，创建图像网格布局
         if (images.length > 1) {
-            // 创建轮播容器
-            const carousel = document.createElement('div');
-            const carouselId = `carousel-${item.pid}`;
-            carousel.id = carouselId;
-            carousel.className = 'carousel slide';
-            carousel.setAttribute('data-bs-ride', 'carousel');
+            // 创建图像网格容器
+            const imageGrid = document.createElement('div');
+            imageGrid.className = 'image-grid';
             
-            // 创建轮播指示器
-            const indicators = document.createElement('div');
-            indicators.className = 'carousel-indicators';
+            // 根据图像数量设置网格布局
+            if (images.length === 2) {
+                imageGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            } else if (images.length === 3) {
+                imageGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            } else if (images.length === 4) {
+                imageGrid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+                imageGrid.style.gridTemplateRows = 'repeat(2, 1fr)';
+            } else if (images.length <= 6) {
+                imageGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+                imageGrid.style.gridTemplateRows = 'repeat(2, 1fr)';
+            } else {
+                imageGrid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            }
             
-            // 创建轮播项容器
-            const carouselInner = document.createElement('div');
-            carouselInner.className = 'carousel-inner';
-            
-            // 添加每个图像作为轮播项
+            // 添加所有图像到网格中
             images.forEach((imgSrc, index) => {
-                // 创建指示器按钮
-                const indicator = document.createElement('button');
-                indicator.setAttribute('type', 'button');
-                indicator.setAttribute('data-bs-target', `#${carouselId}`);
-                indicator.setAttribute('data-bs-slide-to', index);
-                if (index === 0) indicator.classList.add('active');
-                indicators.appendChild(indicator);
+                const imgWrapper = document.createElement('div');
+                imgWrapper.className = 'image-wrapper';
                 
-                // 创建轮播项
-                const carouselItem = document.createElement('div');
-                carouselItem.className = `carousel-item ${index === 0 ? 'active' : ''}`;
-                
-                // 创建图像
                 const img = document.createElement('img');
                 img.src = imgSrc;
-                img.className = 'vqa-image d-block w-100';
+                img.className = 'vqa-image grid-image';
                 img.alt = `Image ${item.pid}-${index+1}`;
                 
-                carouselItem.appendChild(img);
-                carouselInner.appendChild(carouselItem);
+                // 添加点击事件以便查看大图
+                img.onclick = function() {
+                    openImageModal(imgSrc, `图像 ${index+1}/${images.length}`);
+                };
+                
+                imgWrapper.appendChild(img);
+                imageGrid.appendChild(imgWrapper);
             });
             
-            // 创建上一个/下一个控制按钮
-            const prevButton = document.createElement('button');
-            prevButton.className = 'carousel-control-prev';
-            prevButton.setAttribute('type', 'button');
-            prevButton.setAttribute('data-bs-target', `#${carouselId}`);
-            prevButton.setAttribute('data-bs-slide', 'prev');
-            prevButton.innerHTML = `
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">上一个</span>
-            `;
-            
-            const nextButton = document.createElement('button');
-            nextButton.className = 'carousel-control-next';
-            nextButton.setAttribute('type', 'button');
-            nextButton.setAttribute('data-bs-target', `#${carouselId}`);
-            nextButton.setAttribute('data-bs-slide', 'next');
-            nextButton.innerHTML = `
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">下一个</span>
-            `;
-            
-            // 组装轮播
-            carousel.appendChild(indicators);
-            carousel.appendChild(carouselInner);
-            carousel.appendChild(prevButton);
-            carousel.appendChild(nextButton);
-            
             // 添加到图像容器
-            imageContainer.appendChild(carousel);
+            imageContainer.appendChild(imageGrid);
             
             // 为第一张图像添加打开文件夹按钮
             const openFolderBtn = document.createElement('button');
@@ -662,6 +668,11 @@ function renderDataItems(dataItems, container) {
             img.className = 'vqa-image';
             img.src = images[0];
             img.alt = `Image ${item.pid}`;
+            
+            // 添加点击事件以便查看大图
+            img.onclick = function() {
+                openImageModal(images[0], `图像`);
+            };
             
             const openFolderBtn = document.createElement('button');
             openFolderBtn.className = 'btn btn-sm btn-light image-open-btn';
@@ -793,4 +804,44 @@ function showAlert(message, type = 'info', duration = 3000) {
             alertDiv.remove();
         }, 300);
     }, duration);
+}
+
+// 添加图像模态框显示函数
+function openImageModal(imgSrc, title) {
+    // 检查是否已存在模态框，如果不存在则创建
+    let modal = document.getElementById('imageModal');
+    
+    if (!modal) {
+        // 创建模态框结构
+        modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.id = 'imageModal';
+        modal.tabIndex = '-1';
+        modal.setAttribute('aria-labelledby', 'imageModalLabel');
+        modal.setAttribute('aria-hidden', 'true');
+        
+        modal.innerHTML = `
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="imageModalLabel"></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img id="modalImage" class="img-fluid" alt="Large Image">
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    }
+    
+    // 设置模态框内容
+    document.getElementById('imageModalLabel').textContent = title;
+    document.getElementById('modalImage').src = imgSrc;
+    
+    // 显示模态框
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
 } 
